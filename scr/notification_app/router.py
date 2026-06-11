@@ -3,9 +3,11 @@ from redis import asyncio as aioredis
 from sqlmodel import Session, select
 from arq import create_pool
 from arq.connections import RedisSettings
-
+from typing import Annotated
 from scr.database import get_redis_client, get_session
 from .models import NotificationRequest, NotificationLog, UserNotificationPreference
+
+
 
 note_router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
@@ -16,8 +18,8 @@ WINDOW_SECONDS = 60
 @note_router.post("/send")
 async def trigger_notification(
     payload: NotificationRequest,
+    db: Annotated[Session, Depends(get_session)],
     redis: aioredis.Redis = Depends(get_redis_client),
-    db: Session = Depends(get_session),
 ):
     # --- STEP 1: RATE LIMITER ---
     redis_key = f"rate_limit:{payload.user_id}:notification"
@@ -34,7 +36,8 @@ async def trigger_notification(
     statement = select(UserNotificationPreference).where(
         UserNotificationPreference.user_id == payload.user_id
     )
-    preference = db.exec(statement).first()
+    result = await db.exec(statement)
+    preference = result.first()
 
     # If a preference profile exists, check if their targeted channel is turned off
     if preference:

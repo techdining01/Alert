@@ -1,9 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine, pool
-from src.main import app  # Assuming your main FastAPI instance is here
-from src.database import get_session
-from src.notification_app.models import UserNotificationPreference
+from ....scr import app  
+from ...database import get_session
 
 
 # 1. Setup a clean, independent In-Memory SQLite Engine for Testing
